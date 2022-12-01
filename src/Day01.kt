@@ -1,17 +1,33 @@
 fun main() {
-    fun part1(input: List<String>): Int {
-        return input.size
+  fun reduceInput(input: List<String>): List<Int> {
+    val calTotals: MutableList<Int> = mutableListOf(0)
+
+    for (line in input) {
+      if (line.isEmpty()) {
+        calTotals.add(0)
+      } else {
+        val cal = Integer.parseInt(line)
+        calTotals[calTotals.size - 1] += cal
+      }
     }
 
-    fun part2(input: List<String>): Int {
-        return input.size
-    }
+    calTotals.sortDescending()
+    return calTotals
+  }
 
-    // test if implementation meets criteria from the description, like:
-    val testInput = readInput("Day01_test")
-    check(part1(testInput) == 1)
+  fun part1(input: List<String>): Int {
+    return reduceInput(input)[0]
+  }
 
-    val input = readInput("Day01")
+  fun part2(input: List<String>): Int {
+    return reduceInput(input).take(3).sum()
+  }
+
+  // test if implementation meets criteria from the description, like:
+  val testInput = readInput("Day01_test")
+  check(part1(testInput) == 24000)
+
+  val input = readInput("Day01")
     println(part1(input))
     println(part2(input))
 }
