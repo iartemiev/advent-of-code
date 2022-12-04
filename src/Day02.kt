@@ -1,5 +1,7 @@
 import java.lang.IllegalArgumentException
 
+// Super verbose solution - wanted to play with enums with anonymous classes
+
 enum class PlayerMove(val move: RockPaperScissors) {
   X(RockPaperScissors.ROCK), Y(RockPaperScissors.PAPER), Z(RockPaperScissors.SCISSORS)
 }
