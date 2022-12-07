@@ -3,8 +3,8 @@ fun findUnique(line: String, sequenceLength: Int): Int {
   var found = false
 
   while (!found) {
-    val countMap = line.subSequence(startIdx, startIdx + sequenceLength).groupingBy { it }.eachCount()
-    if (countMap.values.size == sequenceLength) {
+    val countSet = line.subSequence(startIdx, startIdx + sequenceLength).toSet()
+    if (countSet.size == sequenceLength) {
       found = true
     } else {
       startIdx++
@@ -12,6 +12,13 @@ fun findUnique(line: String, sequenceLength: Int): Int {
   }
 
   return startIdx + sequenceLength
+}
+
+//Cathrin's solution - saving for future ref
+fun processWindowOfX(input: String, x: Int) : Int{
+  return input.windowed(x,1) {
+      window -> window.toSet().size == x
+  }.indexOf(true) + x
 }
 
 fun main() {
