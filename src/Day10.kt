@@ -1,131 +1,87 @@
-import java.lang.IllegalArgumentException
+import kotlin.math.floor
 
-data class Point(val x: Int, val y: Int) {
-  operator fun minus(point2: Point): Point {
-    return Point(x - point2.x, y - point2.y)
-  }
+enum class Instruction(val cycles: Int) {
+  noop(1),
+  addx(2),
 }
 
-class Bridge(private val tailLength: Int = 1) {
-  val knotPositions: MutableList<Point> = MutableList(tailLength + 1) { Point(0, 0) }
-  val tailPointsVisited = mutableSetOf(Point(0, 0))
+fun drawCRT(): (cycle: Int, sprite: Int) -> Unit {
+  val grid = MutableList(6) { MutableList(40) {"."} }
 
-  fun move(direction: Char, steps: Int) {
-    for (i in 1..steps) {
-      moveHead(direction)
+  return fun (cycle: Int, sprite: Int) {
+    val row = (cycle - 1).floorDiv(40)
+    val pixel = (cycle - 1) % 40
 
-      for (j in 1.. tailLength) {
-        moveTail(j)
-      }
-    }
-  }
-
-  private fun moveHead(direction: Char) {
-    val headPos = knotPositions[0]
-    knotPositions[0] = when (direction) {
-      'U' -> Point(headPos.x, headPos.y + 1)
-      'D' -> Point(headPos.x, headPos.y - 1)
-      'L' -> Point(headPos.x - 1, headPos.y)
-      'R' -> Point(headPos.x + 1, headPos.y)
-      else -> throw IllegalArgumentException("Invalid direction $direction")
-    }
-  }
-
-  private fun moveTail(pos: Int) {
-    val currentKnot = knotPositions[pos]
-    val prevKnot = knotPositions[pos - 1]
-
-    if (prevKnot == currentKnot) return
-    val (diffX, diffY) = (prevKnot - currentKnot)
-
-    if (diffX !in -1..1) {
-      val newX = currentKnot.x + (diffX/2)
-      var newY = currentKnot.y
-
-      if (diffY != 0) {
-        newY += diffY
-      }
-
-      knotPositions[pos] = Point(newX, newY)
-
-    } else if (diffY !in -1..1) {
-      val newY = currentKnot.y + (diffY/2)
-      var newX = currentKnot.x
-
-      if(diffX != 0) {
-        newX += diffX
-      }
-
-      knotPositions[pos] = Point(newX, newY)
+    if (pixel in (sprite-1)..(sprite+1)) {
+      grid[row][pixel] = "#"
     }
 
-    if (pos == tailLength) {
-      tailPointsVisited.add(knotPositions[pos])
+    if (cycle == 240) {
+      val p = grid.joinToString(separator = "\n" ) { it.joinToString("") }
+      println(p + "\n")
     }
   }
 }
 
-fun ropeBridge(bridge: Bridge, input: List<String>) {
-  for (line in input) {
-    val (direction, steps) = line.split(" ").map { if (it.matches("\\d+".toRegex())) it.toInt() else it.single() }
-    printGrid(bridge)
-    bridge.move(direction as Char, steps as Int)
+fun runProgram(instructionList: MutableList<List<String>>, drawOutput: Boolean = false): Int {
+  var cycle = 1
+  var registerX = 1
+  var signalSum = 0
+
+  var currentLine = instructionList.removeFirst()
+  var currentInstruction = Instruction.valueOf(currentLine[0])
+  var currentCycles = currentInstruction.cycles
+
+  val draw = drawCRT()
+
+  while(true) {
+    if (drawOutput) {
+      draw(cycle, registerX)
+    }
+
+    cycle++
+    currentCycles--
+
+    if (currentCycles == 0) {
+      if (currentInstruction == Instruction.addx) {
+        registerX += currentLine[1].toInt()
+      }
+
+      if (instructionList.size == 0) break
+
+      currentLine = instructionList.removeFirst()
+      currentInstruction = Instruction.valueOf(currentLine[0])
+      currentCycles = currentInstruction.cycles
+    }
+
+    if ((cycle == 20) || ((cycle - 20) % 40 == 0)) {
+      val signal = cycle * registerX
+      signalSum += signal
+    }
   }
-}
 
-fun printGrid(bridge: Bridge) {
-// 26 w x 21 h
-//  S -> x=11; y= 5
-  fun normalize(p: Point): Point {
-    return Point(p.x + 11, p.y + 5)
-  }
-
-  val row = MutableList(26){ "." }
-  val grid = MutableList(21) { row }
-
-//  for ((idx, k) in bridge.knotPositions.withIndex().reversed()) {
-//    val normalized = normalize(k)
-//    val printVal = if (idx == 0) "H" else idx
-//
-//    grid[normalized.y][normalized.x] = printVal.toString()
-//  }
-
-  for (r in grid) {
-    println(r)
-  }
-
-  println()
+  return signalSum
 }
 
 fun main() {
   fun part1(input: List<String>): Int {
-    val bridge = Bridge()
-
-    ropeBridge(bridge, input)
-
-    return bridge.tailPointsVisited.size
+    val instructionList = input.map { it.split(" ") } as MutableList<List<String>>
+    return runProgram(instructionList)
   }
 
   fun part2(input: List<String>): Int {
-    val bridge = Bridge(9)
-
-    ropeBridge(bridge, input)
-
-//    println("max: ${bridge.tailPointsVisited.maxBy { it.y }}")
-
-    return bridge.tailPointsVisited.size
+    val instructionList = input.map { it.split(" ") } as MutableList<List<String>>
+    return runProgram(instructionList, true)
   }
 
   // test if implementation meets criteria from the description, like:
-//  val testInput = readInput("Day09_test")
-//    check(part1(testInput) == 13)
+  val testInput = readInput("Day10_test")
+    check(part1(testInput) == 13140)
+    part2(testInput)
 //    check(part2(testInput) == 1)
 
-  //  2717
-  val testInput2 = readInput("Day09_test2")
-    check(part2(testInput2) == 36)
 
-//  val input = readInput("Day09")
-//    println(part1(input))
-//    println(part2(input))
+  val input = readInput("Day10")
+    println(part1(input))
+    println(part2(input))
 }
